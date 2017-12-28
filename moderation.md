@@ -1,5 +1,5 @@
 Not very important.
-
+```javascript
 KickPlayer:
 {
     player_id: uint32
@@ -28,9 +28,9 @@ SetServerInfo:
 {
     desc: string
 }
-
+```
 -----
-
+```javascript
 CreateRoom:
 {
     room_id: uint32
@@ -46,3 +46,4 @@ FreezeRoom:
     room_id: uint32
     frozen: bool
 }
+```
