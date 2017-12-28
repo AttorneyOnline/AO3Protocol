@@ -99,9 +99,9 @@ JoinResponse:
 	}
 	result_msg: string
 }
-
+```
 -----
-
+```javascript
 RoomListRequest:
 {
     empty
