@@ -1,6 +1,7 @@
-Obviously, this is the most important part of the entire game.
+## Obviously, this is the most important part of the entire game.
 
-Chat:
+# Chat:
+```javascript
 {
     player_id: uint32
     emote: string
@@ -21,7 +22,9 @@ Chat:
 
     [..other options follow based on the game..]
 }
-Attorney Online 3 extensions:
+```
+# Attorney Online 3 extensions:
+```javascript
 {
     (preanim: bool)
 
@@ -110,3 +113,4 @@ SoundVolume:
     channel: uint32
     (smooth: bool)
 }
+```
