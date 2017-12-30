@@ -9,12 +9,12 @@ All assets must contain these two files: `info.json` and `content.tar`.
    id: string
    (parent: string)
    name: string
-       Use spaces, not underscores. This is not an internal name
-       and should never be used as if it were a unique identifier.
+       // Use spaces, not underscores. This is not an internal name
+       // and should never be used as if it were a unique identifier.
    hash: string
-       By default, a sha1 hash of content.tar.
+       // By default, a sha1 hash of content.tar.
    (hash_type: string)
-       Not implemented yet.
+       // Not implemented yet.
    author: string
    date: string (ISO-8601)
    category: string (see below for valid categories)
@@ -37,14 +37,14 @@ Contains a `manifest.mp` file which is encoded with MsgPack.
 {
     icon: string (filename)
     (blip: string)
-        If none is selected, the default sound will be used.
+        // If none is selected, the default sound will be used.
     emotes: ordinal set of emotes [
         {
             name: string
             idle: animation
             talking_preanim: animation
-                Another preanimation before this one can be chained by
-                the user.
+                // Another preanimation before this one can be chained by
+                // the user.
             talking: animation
             talking_postanim: animation
         }
@@ -94,6 +94,7 @@ Category: `background`
         }
     ]
 }
+```
 
 ### Audio
 Category: `audio`
@@ -109,6 +110,7 @@ Only holds one audio file at a time for a few reasons:
     filename: string
     length: float
 }
+```
 
 ### Evidence
 Category: `ao3/evidence`
@@ -118,3 +120,4 @@ Category: `ao3/evidence`
 {
     images: [string]
 }
+```
