@@ -94,9 +94,9 @@ Category: `background`
         {
             name: string
             animation: string (animation filename)
-            overlays: [string]
         }
     ]
+    overlays: [string]
 }
 ```
 
