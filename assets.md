@@ -41,6 +41,9 @@ Contains a `manifest.mp` file which is encoded with MsgPack.
     emotes: ordinal set of emotes [
         {
             name: string
+            icon: string
+                // The path to the icon for the button.
+                // Recommended 64x64 or 128x128.
             idle: animation
             talking_preanim: animation
                 // Another preanimation before this one can be chained by
@@ -52,6 +55,7 @@ Contains a `manifest.mp` file which is encoded with MsgPack.
     preanims: ordinal set of preanims [
         {
             name: string
+            icon: string
             animation: animation
         }
     ]
