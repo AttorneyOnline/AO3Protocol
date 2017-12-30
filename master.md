@@ -5,13 +5,11 @@ If the master server does not get a heartbeat after 30 seconds, the advertisemen
 ```javascript
 heartbeat: {
   name: string
-  motd: string
   maxPlayers: int
   currentPlayers: int
-  serverSoftware: string
-  softwareVersion: string
-  language: string
-  advertise: bool
+  server_software: string
+  software_version: string
+  country: string (ISO 3166-1 alpha-2)
   port: int
 }
 ```
@@ -27,7 +25,7 @@ masterChat: {
 Obtaining a server list, for game clients
 ```javascript
 serverRequest: {
-  clientVersion: string
+  client_version: string
 }
 ```
 Master Server response
@@ -35,12 +33,11 @@ Master Server response
 serverResponse: {
   servers: [
     {
-      motd: string
       name: string
       port: int
-      maxPlayers: int
-      currentPlayers: nt
-      language: string
+      max_players: int
+      current_players: int
+      country: string
     },
     ...
   ]
