@@ -85,7 +85,7 @@ ServerInfoResponse:
 JoinRequest:
 {
 	player_name: string
-	// If trying to join with password: bcrypt(auth_challenge + password)
+	// If trying to join with password: sha256(auth_challenge + password)
 	(auth_response: bytes)
 	player_id: string
 }
