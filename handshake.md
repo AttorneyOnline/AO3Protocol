@@ -51,7 +51,7 @@ ServerInfoResponse:
 	address: string
 	port: uint16
 	version: string
-	players: uint32
+	player_count: uint32
 	max_players: uint32
 	protection: enum {
         // No password is needed to join a room.
