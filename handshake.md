@@ -5,6 +5,8 @@
 All packets:
 ```javascript
 {
+    // This string is equal to the object name listed in this protocol. It is used to identify the type of packet.
+    action: string
     id: string
     [..and then the rest follows..]
 }
