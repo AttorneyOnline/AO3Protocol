@@ -3,7 +3,7 @@
 Heartbeat. This must be sent every 10 seconds by the master server client.
 If the master server does not get a heartbeat after 30 seconds, the advertisement is removed.
 ```javascript
-heartbeat: {
+Heartbeat: {
   name: string
   maxPlayers: int
   currentPlayers: int
@@ -16,7 +16,7 @@ heartbeat: {
 ---
 Chat. This allows all users to talk on the master server.
 ```javascript
-masterChat: {
+MasterChat: {
   name: string
   message: string
 }
@@ -24,13 +24,13 @@ masterChat: {
 ---
 Obtaining a server list, for game clients
 ```javascript
-serverRequest: {
+ServerListRequest: {
   client_version: string
 }
 ```
 Master Server response
 ```javascript
-serverResponse: {
+ServerListResponse: {
   servers: [
     {
       name: string
