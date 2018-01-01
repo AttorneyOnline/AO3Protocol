@@ -6,7 +6,6 @@ All packets:
 ```javascript
 {
     // This string is equal to the object name listed in this protocol. It is used to identify the type of packet.
-    action: string
     id: string
     [..and then the rest follows..]
 }
@@ -34,7 +33,7 @@ All packets:
 ServerInfoRequest:
 {
 	type: enum {
-		// Server only responds with a fixed message.
+		// Player count, used by MS
 		PING = 0
 
 		// Server responds with ServerInfoResponse.
