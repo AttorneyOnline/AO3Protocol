@@ -97,6 +97,8 @@ JoinResponse:
 		SUCCESS = 0
 		SERVER_FULL = 1
 		BAD_PASSWORD = 2
+		BANNED = 3
+		OTHER = 4
 	}
 	result_msg: string
 }
