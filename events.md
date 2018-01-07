@@ -1,23 +1,28 @@
-## Obviously, this is the most important part of the entire game.
+Obviously, this is the most important part of the entire game.
 
-# Chat:
+Because of @gameboyprinter's decisions to key his player list by socket instead
+of by a player identifer, each client can only subscribe to one room at a time.
+To join multiple rooms, worker client threads must be spawned that perform the
+entire handshaking process again to replicate the player state, as dictated by
+the master client thread. The server then only broadcasts events to the master
+client, which are in turn dispatched to the UI thread. The worker clients only
+send chat messages for the character they have joined as.
+
+
+
+# ChatMessage:
 ```javascript
 {
-    player_id: uint32
+    // The character instance ID.
+    instance: uint32
     emote: string
 
     // Messages can contain markup. Will be explained separately.
-    msg: text
+    text: string
 
-    // The timescale should be clamped to reasonable values,
-	// e.g. 0.5~4.0. This modifies the speed at which the
-	// chat message is performed, along with the associated
-	// emote.
-    (timescale: float)
-
-	// Depending on the game, horizontal flipping may not be available
-	// as an option to clients; however, it may be controlled
-	// by the server programmatically.
+    // Depending on the game, horizontal flipping may not be available
+    // as an option to clients; however, it may be controlled
+    // by the server programmatically.
     (flip: bool)
 
     [..other options follow based on the game..]
