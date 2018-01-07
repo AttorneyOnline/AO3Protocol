@@ -137,5 +137,12 @@ JoinRoomResponse:
         ROOM_FULL = 1
         BAD_PASSWORD = 2
     }
+    room_state: {
+        background: string
+        audio: string
+        audio_start: uint64 (Unix timestamp)
+        last_event: ChatMessage
+        last_event_time: uint64 (Unix timestamp)
+    }
 }
 ```
