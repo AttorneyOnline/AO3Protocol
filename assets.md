@@ -68,8 +68,9 @@ Contains a `manifest.mp` file which is encoded with MsgPack.
             DEFENSE = 1
             PROSECUTION = 2
             JUDGE = 3
-            // don't remember what these stood for...
+            //Helper defense
             HLD = 4
+            //Helper prosecution
             HLP = 5
         }
         (objection_override: {
