@@ -387,6 +387,11 @@ This is the central widget of the main window. As a result, it cannot be moved
 out of the main window. See the Core section for more information on how it
 works.
 
+If a custom character that is not downloaded by the client is used in play,
+a star will appear at the top-right corner of the viewport. Upon clicking
+the star, information about the asset will be retrieved, and the client
+will be asked if they wish to download the asset.
+
 ### In-character (IC) chat widget
 
 This contains an adaptively resized chat box, as well as a grid view of
@@ -438,6 +443,8 @@ This is simply a frontend to the settings list of the server.
 For listen servers only: a host may decide to hand over control of the server
 to another player. The host must wait until the player accepts or denies the
 request, as this is a modal dialog. See the Network section.
+
+
 
 # Assets
 
@@ -653,6 +660,8 @@ submitter to make this correction.
 After the manual verification, the repository owner may then place the asset
 archive in the server's storage and refresh the asset server.
 
+
+
 # Core
 
 The core is the most interesting - and most challenging - piece of AC. There do
@@ -684,7 +693,7 @@ complicated, so I decided not to pursue it any further.
 
 Sprites can overlap each other with no restriction using layers.
 
-It is the server's final responsibility to determine what layers
+It is the client's final responsibility to determine what layers
 components of the scene will be placed on. A suggested configuration
 of layers is as follows.
 
@@ -890,6 +899,12 @@ Custom events, such as the "witness testimony" and "cross exanimation"
 animations found in Attorney Online, may be played. These events are managed
 solely by the server as overlays.
 
+## Markup language
+
+A markup language may be considered to be used in IC for control of a character
+during dialogue. However, its design would complicate the core so much that it
+would rather not be implemented.
+
 ## Messages
 
 Instead of a "convoluted" virtual machine (see VNVM section), the core will be
@@ -900,21 +915,132 @@ is comprised of a set of one-way commmands.
 
 These messages should map closely with the network section.
 
-### `background <asset> [transition]`
+### `background <asset> [transition] [reset]`
 
 Changes the background to the specified asset.
 
 - `asset`: Asset ID
 - `transition`: Whether or not a fade across black should occur
+- `reset`: Whether or not the last emote/dialogue should be hidden.
+    This will show the default side of the background with no dialogue
+    or characters.
 
-### `emote <character> <side> [preanimation] [dialogue] [offset]`
+### `emote <character> <side> <emote> [interjection] [preanimation] [dialogue] [offset]`
 
 Plays an emote, beginning at the specified offset.
 
 - `character`: Asset ID
-- `side`: Side of the current background
-- `preanimation`: Additional preanimation
+- `side`: Side name of the current background
+- `emote`: Ordinal number of the emote
+- `interjection`: Ordinal number of the interjection
+- `preanimation`: Name of the additional preanimation
 - `dialogue`: Text to be displayed on the chatbox
 - `offset`: Number of seconds of animation and dialogue to skip.
     If the offset is greater than the total estimated emote time,
     then the final state of the animation/dialogue is shown.
+
+### `timescale <scale>`
+
+Sets the timescale.
+
+- `timescale`: Multiplier
+
+### `music <asset/url> [transition] [offset]`
+
+Changes the music (current track) to the specified resource.
+
+- `asset/url`: Asset ID or URL. If this field is `stop`, then
+    the music will be stopped.
+- `transition`: Whether a crossfade or fade out should be done
+- `offset`: The offset of the track to start from, in seconds.
+    The current position of the track will need to be calculated by the client.
+  - For music without loop points: `offset % length`
+  - For music with loop points: `offset` if `offset < loop_start`; otherwise,
+    `(offset - loop_start) % (loop_end - loop_start) + loop_start`
+
+### `event <asset> <animation> [interrupt]`
+
+Animates a custom event.
+
+- `asset`: Asset ID
+- `animation`: Animation file
+- `interrupt`: Whether or not dialogue will be interrupted
+    as a result of this event
+
+
+
+# Network
+
+The network protocol is what coalesces the client, server, and asset
+infrastrucutre into one unifying system.
+
+## Wrappers
+
+For a desktop platform target, a raw TCP connection is suggested, with a 32-bit
+packet size preamble. For a browser target, WebSockets is recommended.
+
+### JSON
+
+JSON is convenient for transmission across browsers; however, the format is
+somewhat verbose. It is intended to be transmitted via HTTP as opposed to raw
+TCP.
+
+### MessagePack
+
+MessagePack is an adapted, machine-readable form of JSON that aims for more
+consistency over the wire.
+
+### Protobuf and schema-based protocol libaries
+
+Protobuf is a language that allows protocol schemas to be written. The largest
+problem with such schema-based protocols is their inflexibility: even a simple
+change in parameter order would break protocol compability.
+
+## Master server
+
+The master server simply holds a list of IP addresses and sends them to the client.
+
+### `servers`
+**Client to MS**
+
+Gets the server list and subscribes to changes.
+
+Response: `servers <...>`
+
+### `servers <...>`
+**MS to client**
+
+Represents the full list of servers.
+
+### `new-server <ip>`
+**MS to client**
+
+Indicates that a new server has been added to the list.
+
+### `drop-server <ip>`
+**MS to client**
+
+Indicates that a server has been removed from the list.
+
+### `heartbeat <port>`
+**Server to MS**
+
+Requests that the server located at the connected IP address and specified
+port be added to the server list for some amount of time.
+
+**Response**: `heartbeat-<ok|err>`
+
+### `heartbeat-ok <interval>`
+**MS to server**
+
+States a success in the heartbeat request. The next heartbeat request should be sent
+within `interval` amount of seconds.
+
+### `heartbeat-err [message]`
+**MS to server**
+
+States an error in the heartbeat request, with an optional short error.
+
+## Handshake
+
+More to come.
