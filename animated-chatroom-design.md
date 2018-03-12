@@ -247,15 +247,16 @@ Moreover, browsers come with WebM, GIF, APNG, Opus, and such resources can be
 loaded and played back very easily with JavaScript.
 
 Some unsolved problems remain with this approach, however:
- - Filesystem emulation using IndexedDB is not very well supported;
+
+- Filesystem emulation using IndexedDB is not very well supported;
     as such, it may take more work to allow asset packages to be
     loaded in and extracted using browser-based JavaScript.
- - The DOM is slow to update, and browsers generally do not guarantee
+- The DOM is slow to update, and browsers generally do not guarantee
     timing. This means that the window can stutter at any moment.
- - Browsers tend to be memory hogs; about 200-400 MB could be allocated
+- Browsers tend to be memory hogs; about 200-400 MB could be allocated
     for every open tab.
- - Inter-tab/process communication is difficult to manage.
- - Multi-clienting is difficult, since information is redundant across tabs.
+- Inter-tab/process communication is difficult to manage.
+- Multi-clienting is difficult, since information is redundant across tabs.
 
 If AC was less complicated, it could work on a browser. However, some features
 are desired by power users that cannot be replicated on a browser, such as
@@ -265,9 +266,10 @@ certain hotkeys, as well as placing widgets across multiple monitors.
 # User interface
 
 The user interface should follow this basic hierarchy:
- - Each server occupies a main window.
- - Each room within a server occupies a detachable tab.
- - Each character occupied within a room occupies an in-character (IC) chat
+
+- Each server occupies a main window.
+- Each room within a server occupies a detachable tab.
+- Each character occupied within a room occupies an in-character (IC) chat
     widget.
 
 In addition to this hierarchy, almost every widget should be detachable from
@@ -338,9 +340,10 @@ scaling modes.
 This is essentially a frontend to the database backing the asset cache.
 
 There should be three options:
- - forced downloading of an asset (add),
- - removing an asset (delete), and
- - pruning old assets not used in the last user-specified
+
+- forced downloading of an asset (add),
+- removing an asset (delete), and
+- pruning old assets not used in the last user-specified
     number of days (prune).
 
 ## Loading dialog
@@ -461,6 +464,7 @@ from the Docker format; any other complexities were disregarded.
 
 There are some large use case differences, however, that otherwise render the
 Docker format impractical for adoption as a model:
+
 - Files within an asset do not need to be marked for deletion; they are simply
     left unused. (Besides, their method of tagging files for deletion seemed
     likely to collide with real files.)
