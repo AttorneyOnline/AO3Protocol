@@ -680,6 +680,241 @@ explains the ease of porting some *Ace Attorney* games from 3DS to mobile.
 Despite the purported convenience, the scheme was seen as impractical and
 complicated, so I decided not to pursue it any further.
 
+## Layers
+
+Sprites can overlap each other with no restriction using layers.
+
+It is the server's final responsibility to determine what layers
+components of the scene will be placed on. A suggested configuration
+of layers is as follows.
+
+- **Layer 0**: Background
+- **Layer 1-2**: Character
+- **Layer 3**: Auxiliary character
+- **Layer 4**: Background overlay
+- **Layer 5**: Effects
+
+Only one sprite can occupy a layer at a given moment. (Otherwise, z-fighting
+would occur.)
+
+## Scaling
+
+- The *base resolution* is the resolution of the lowest layer (the background).
+- The *sprite resoluition* is the resolution of a sprite displayed on the
+    scene. It may not be the same as the base resolution.
+- The *viewport resolution* is the resolution of the viewport, as sized
+    by the client. It may not be the same as either the base or the sprite
+    resolution.
+
+Two scaling methods are available:
+
+- Sprites are scaled to the base resolution, and then the base resolution is
+    scaled to the viewport resolution.
+    The disadvantage to this method is that high-resolution sprites lose
+    detail, but it allows all layers to be consistent in size.
+- The base resolution and sprites are independently scaled to the viewport
+    resolution.
+    This is the naive solution, but it results in inconsistent layer quality.
+
+Scaling filters include nearest-neighbor (point) filtering, bicubic filtering,
+xBRZ, and HQx. Nearest-neighbor filtering should be the default. It may be
+prohibitively complicated to upscale special media with other special filters,
+except if the upscaling is done as the last step by passing in the OpenGL
+framebuffer to the appropriate scaler.
+
+## Timescale
+
+A server may define a timescale, a multiplier that controls the speed of
+preanimations, talking animations (debatable), postanimations, and dialogue. A
+timescale is also convenient for allowing slow clients to "catch up" with
+missed time due to a stutter or network lag.
+
+## Chatbox
+
+As with all visual novels, a chatbox is necessary to show dialogue. The
+interval betweens chatbox ticks/blips, by default, is 80 ms, in which one
+character is printed out. The blip sound is defined by each character; there is
+no default blip sound.
+
+Ticks should take consideration of special Unicode characters: some characters
+are diacritics, others symbols, and even some others unprintable. Diacritics
+and unprintable characters should be chained with the next standard character;
+symbols (such as kana and Han characters) should be printed at 0.75x timescale.
+
+If a character's dialogue is blank, the chatbox should not be displayed.
+
+The total time taken by a chatbox dialogue should be estimated to allow
+catch-up.
+
+The appearance of the chatbox is defined by the scene as an asset. It is
+actually easier to go this route than to define it by the client's theme,
+since one would have to find a place to put these resources, and there is
+no better place than the asset cache.
+
+The chatbox must may include a custom font. Some players prefer bitmap fonts,
+so appropriate support should be made for bitmap fonts by disabling
+subpixel smoothing.
+
+A chatbox override should always be allowed for use by clients.
+
+## Backgrounds
+
+Backgrounds are comprised of multiple sides, each being a static or animated
+sprite. Some sides may force a certain sprite direction (front, left, or right).
+
+Backgrounds must specify a default side (for those characters which do not
+specify a default side), but this default side must not have a sprite direction
+restriction. When there is no activity, the default side should be shown
+without characters.
+
+## Characters
+
+Characters are a series of related sprites bound together by a sequence or
+animation.
+
+- **Name**: The name of a character will be shown on the character selection
+    screen. A separate chatbox-friendly name can also be designated, which
+    should be an abbreviated version of the name.
+- **Side**: Specifies the default side of the background.
+- **Icon**: The character icon will be shown on the character selection screen.
+    It is possible, but not recommended, for a character to have no icon. The
+    icon should be a minimum size of 64x64, although a size of 128x128 or
+    256x256 is recommended.
+- **Blip**: Specifies the sound file to be played for each chatbox tick. If no
+    sound is specified, no sound is played. The sound file must be contained in
+    the asset.
+- **Direction**: Specifies the direction the sprite faces.
+
+### Emotes
+
+Emotes should be stored as an ordered list.
+
+An emote consists of the following:
+
+- User-friendly name
+- Button icon
+- Preanimation (optional). This can be prepended with a preanimation chosen by
+    the user.
+- Idle animation file
+- Talking animation file (optional)
+- Postanimation file (optional)
+- Background override. Some emotes may require the use of speed lines in a
+    certain direction. In this case, a background override will serve to be
+    useful.
+
+### Preanimations
+
+Preanimations need not be displayed in a certain order. They can be selected
+by the player, but if the same preanimation is selected as the one that is
+part of the emote, then the preanimation will only be played once.
+
+A preanimation consists of the following:
+
+- Name (key)
+- Animation file
+- Duration in milliseconds (optional)
+- Sound effect (optional)
+  - Sound file
+  - Duration in milliseconds (optional)
+
+The default duration of a preanimation is the duration of the animation.
+
+### Interjections
+
+Interjections should be stored as an ordered list.
+
+Interjections can interrupt any dialogue, except if the dialogue is protected.
+
+An interjection consists of the following:
+
+- Name
+- Sound file
+- Animation
+
+The duration of an interjection is the duration of the sound effect.
+
+## Effects
+
+Effects are an optional implementation feature. They allow, for instance,
+snow or some other post-processing effect to be overlaid on the scene.
+
+## Sounds
+
+There are three types of sounds: sound effects, blips, and music. The volume
+for each sound type should be controllable by the client.
+
+### Sound effects
+
+Sound effect files are located in the asset from which they are being played,
+although in the future they may also be included in "sound pack" assets.
+However, allowing standalone sound effects to be played is not an important
+feature, and thus sound pack assets should be disregarded.
+
+### Blips
+
+See Chatbox section.
+
+### Music
+
+Each track is an asset that can be named and categorized by the server. Since
+music tends to be very large, music should be either *downloaded on join* as
+a regular asset or *streamed* from an asset server. (This is under debate.)
+
+It may also be the case that music is not an asset and instead streamed from
+a service such as YouTube. If this is so, servers should support adding
+non-asset tracks to their track lists.
+
+Some servers may even allow any music at all to be played, even if it is not
+on the track list.
+
+Between tracks, crossfade and fade out should be supported. In the case of
+crossfade, the new track should be loaded in before the crossfade begins.
+
+Tracks loop automatically. Tracks stored as assets may contain loop start and
+end points; otherwise, the loop start and end points are defined as the start
+and end of the track.
+
+The track selection privilege may be limited to a certain group of players.
+Such privilege management should be left to the server implementation.
+
+Playlist support is not a feature currently under consideration.
+
+## Catch-up
+
+When a client joins a room, the client should receive the last message sent
+and current track, both specified with an offset.
+
+## Custom events
+
+Custom events, such as the "witness testimony" and "cross exanimation"
+animations found in Attorney Online, may be played. These events are managed
+solely by the server as overlays.
+
 ## Messages
 
-More to come.
+Instead of a "convoluted" virtual machine (see VNVM section), the core will be
+driven by a command set. This is different from an instruction set in that the
+state of the core is not tracked in detail; that is, there is no stack or
+explicit commands to load certain assets. The only communication with the core
+is comprised of a set of one-way commmands.
+
+These messages should map closely with the network section.
+
+### `background <asset> [transition]`
+
+Changes the background to the specified asset.
+
+- `asset`: Asset ID
+- `transition`: Whether or not a fade across black should occur
+
+### `emote <character> <side> [preanimation] [dialogue] [offset]`
+
+Plays an emote, beginning at the specified offset.
+
+- `character`: Asset ID
+- `side`: Side of the current background
+- `preanimation`: Additional preanimation
+- `dialogue`: Text to be displayed on the chatbox
+- `offset`: Number of seconds of animation and dialogue to skip.
+    If the offset is greater than the total estimated emote time,
+    then the final state of the animation/dialogue is shown.
