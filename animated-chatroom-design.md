@@ -1,7 +1,7 @@
 Animated Chatroom
 =================
 
-a project
+a project (revision 1)
 
 
 -----------------
@@ -400,6 +400,8 @@ available emotes, preanimations, and interjections for a character.
 In the future, the chat box may provide auto-completion for the markup language
 stipulated in the Core section. It may also provide support for buffers
 in the future.
+
+Chat should not be sent until the core reports to be idle.
 
 ### IC log
 
@@ -988,7 +990,13 @@ TCP.
 ### MessagePack
 
 MessagePack is an adapted, machine-readable form of JSON that aims for more
-consistency over the wire.
+consistency over the wire. It is preferred if the initial implementation
+will be made using Python.
+
+If MessagePack is used, the `bin` type must be used in order to allow Unicode
+strings to be parsed.
+
+A field called `id` will be reserved for the name of the packet.
 
 ### Protobuf and schema-based protocol libaries
 
@@ -996,21 +1004,61 @@ Protobuf is a language that allows protocol schemas to be written. The largest
 problem with such schema-based protocols is their inflexibility: even a simple
 change in parameter order would break protocol compability.
 
+## NAT traversal
+
+NAT traversal allows players to host servers without the necessity of
+forwarding ports. There are multiple candidate solutions of making this
+possible:
+
+- **STUN**: Session Traversal Utilities for NAT is an IETF-standard method of
+    allowing two clients to establish a direct connection with each other
+    behind various NAT types. Google offers a STUN server; however, STUN works
+    best with UDP, and some STUN server implementations do not work well with
+    TCP.
+- **UPnP**: Many routers support UPnP, which allows port forwarding
+    programmatically without the necessity of configuring ports via a router
+    configuration page. However, based on experience, UPnP support has been
+    shown to be flimsy and unreliable.
+- **Samy Kamkar's pwnat**: May be construed to be malicious, but claimed to be
+    extremely reliable.
+- **localtunnel**: A simple public tunnel server.
+- **IPv6 over Teredo**: Windows attempts to initiate a Teredo interface when
+    a connection is attempted to be established to an IPv6 host. This results
+    in the client receiving an IPv6 address and exposure of all ports via
+    this address. However, Teredo support is unreliable, as it is disabled
+    by default for most Windows machines.
+- **VPS**: Ask players to pay money to host their own servers via an automated
+    service. Extremely inconvenient.
+
 ## Master server
 
-The master server simply holds a list of IP addresses and sends them to the client.
+The master server simply holds a list of IP addresses and sends them to the
+client.
+
+The master server may be implemented using any high-performance network
+library, such as Python asyncio (uvloop if more performance is needed), Node.js
+(if project is time-constrained), or Elixir (if competent enough to pursue it).
+
+The server list may be backed using Redis or PostgreSQL.
+
+For each server on the list, the client will attempt to connect to each one and
+retrieve their basic information.
 
 ### `servers`
 **Client to MS**
 
 Gets the server list and subscribes to changes.
 
-Response: `servers <...>`
+Response: `servers <servers>`
 
-### `servers <...>`
+### `servers <servers>`
 **MS to client**
 
 Represents the full list of servers.
+
+- `servers`: List of servers
+  - `ip`: Address of the server; may be IPv4, IPv6, or hostname
+  - `port`: Port of the server
 
 ### `new-server <ip>`
 **MS to client**
@@ -1025,16 +1073,16 @@ Indicates that a server has been removed from the list.
 ### `heartbeat <port>`
 **Server to MS**
 
-Requests that the server located at the connected IP address and specified
-port be added to the server list for some amount of time.
+Requests that the server located at the connected IP address and specified port
+be added to the server list for some amount of time.
 
 **Response**: `heartbeat-<ok|err>`
 
 ### `heartbeat-ok <interval>`
 **MS to server**
 
-States a success in the heartbeat request. The next heartbeat request should be sent
-within `interval` amount of seconds.
+States a success in the heartbeat request. The next heartbeat request should be
+sent within `interval` amount of seconds.
 
 ### `heartbeat-err [message]`
 **MS to server**
@@ -1043,4 +1091,312 @@ States an error in the heartbeat request, with an optional short error.
 
 ## Handshake
 
-More to come.
+### Overview
+
+- Client establishes a connection. (TCP SYN)
+- Server waits for any client message (~5 seconds).
+ - The server should not send server status to any connecting client, as it is a large waste.
+- Client sends `info-basic`.
+- Server sends back `info-basic` response.
+- Client sends `join-server`.
+- Server sends `join-server` response.
+- The client should proceed to request assets from the server.
+
+### `info-basic`
+**Client to server**
+
+Requests the basic information of the server.
+
+**Response**: `info-basic <...>`
+
+### `info-basic <...>`
+**Server to client**
+
+Provides the server's basic information to the client.
+
+- `name`: Name of the server
+- `version`: Server implementation version
+- `player_count`: Number of players currently connected
+- `max_players`: Maximum number of players
+- `protection`: Protection level of the server:
+  - `open`: No password is needed to join at least one room.
+  - `password`: Joining the server itself requires a password.
+  - `spectate`: Joining the server is restricted, but spectating is open.
+    (Password/whitelist access may be needed to join the server.)
+  - `closed`: Server is enforcing a whitelist, or it is not open to any
+    new players.
+- `desc`: Server description
+- `auth_challenge`: Authentication challenge. Passed even when there is no
+    password.
+- `rooms`: An ordered list of rooms
+  - `name`: Name of the room
+  - `players`: Number of players in the room
+  - `desc`: Description of the room
+  - `protection`: Protection level of the room
+    - `open`: No password is needed to join at least one room.
+    - `spectate`: Access to the room is restricted, but spectating is open.
+    - `closed`: The room is whitelisted or closed to all players.
+
+### `join-server <name> <auth_response>`
+**Client to server**
+
+Indicates that the player is ready to join the server.
+
+- `name`: Name of the player
+- `auth_response`: hmac-sha256(auth_challenge, password)
+    Required even when there is no password.
+
+**Response**: `join-server <result> [message]`
+
+### `join-server <result> [message]`
+**Server to client**
+
+Indicates the result of the join request.
+
+- `result`: Result code
+  - `success`: Client joined successfully.
+  - `full`: The server is full.
+  - `password`: The password is incorrect.
+  - `banned`: The client is banned.
+  - `other`: Requires a message.
+- `message`: Custom, optional server message
+
+### `disconnect [message]`
+**Server to client**
+
+Indicates that the client was disconnected by the server due to some reason.
+A TCP RST follows after this message.
+
+- `message`: Custom, optional server message
+
+## Assets
+
+### `asset-list`
+**Client to server**
+
+Requests the full asset list of the server.
+
+**Response**: `asset-list <repositories> <assets>`
+
+### `asset-list <repositories> <assets>`
+**Server to client**
+
+Lists the server-suggested repositories and full asset list of the server.
+
+- `repositories`: A list of server-suggested repository URLs.
+- `assets`: A list of asset IDs.
+
+### `new-assets <assets>`
+**Server to client**
+
+Indicates that new assets have been added to the server for the client to
+download in-game.
+
+NOTE: This message may be received while the client is still downloading
+assets as a result of an `asset-list` response. Any assets added from
+the `new-assets` list must be added to the download queue if they do not
+already exist.
+
+- `assets`: A list of asset IDs.
+
+## Rooms
+
+A client session includes only one room. Joining another room will require a
+new client session/socket to be opened with the server.
+
+### `chars <room_id>`
+**Client to server**
+
+Requests the character list for a room.
+
+- `room_id`: Ordinal number of the room
+
+**Response**: `chars <characters> <custom_allowed>`
+
+### `chars <characters> <custom_allowed>`
+**Server to client**
+
+Lists the allowed characters for a room.
+
+- `characters`: Ordered list of characters
+  - `asset`: Asset ID
+  - `protection`: Protection level
+    - `open`: Character can be used
+    - `used`: Character is in use
+    - `protected`: Character is protected
+- `custom_allowed`: Whether or not custom characters not on the list
+    are allowed
+
+### `join-room <room_id> [character]`
+**Client to server**
+
+Joins a room.
+
+- `room_id`: Ordinal number of the room
+- `character`: Asset ID
+
+**Response**: `join-room <result>`
+
+### `join-room <result>`
+**Server to client**
+
+Indicates the result of the room join response.
+
+In addition to this, the server should separately send events to allow the
+client to catch up to last activity.
+
+- `result`: Result code
+  - `success`: Client joined successfully.
+  - `full`: The room is full.
+  - `denied`: Access is denied.
+
+### `ooc <message> [player]`
+**Bidirectional**
+
+Sends an OOC message to the server, or receives an OOC from the server or
+another player.
+
+- `message`: The text content of the OOC message.
+- `player`: The originating player of the message. Ignored if sending
+    from client to server. If the OOC message is a server/system message,
+    this field will be empty.
+
+**Response**: OOC message is echoed by server.
+
+## Events
+
+The server will send event commands that may be passed directly to the core;
+see the Core section for information about such commands.
+
+In addition, events will contain a field `timestamp`, which specifies the Unix
+timestamp (in UTC) representing the time the event was sent by the server. If
+the difference between the `timestamp` and the current system time (in UTC) is
+greater than 2 seconds, the difference should be added to the offset before the
+command is passed to the core.
+
+Many commands are bidirectional; discretion should be taken in the server
+implementation regarding which commands should be bidirectional. Invalid
+commands sent by the client are ignored.
+
+## Administration
+
+Privileged users may access these commands.
+
+### `opts`
+**Client to server**
+
+Requests the list of options offered by the server.
+
+**Response**: `opts <options>`
+
+### `opts <options>`
+**Server to client**
+
+Lists a key-value map of options offered by the server.
+Values may contain nested keys and values.
+
+- `options`: Key-value map of options
+
+### `set-opt <key> <value>`
+**Client to server**
+
+Sets an option. The value may not be an object, but it can
+be an array or literal value.
+
+**Response**: `set-opt <result>`
+
+### `set-opt <result>`
+**Server to client**
+
+Indicates the result of the most recent option change.
+
+- `result`: Result code
+  - `success`: The option was set successfully.
+  - `error`: There was an error setting the option. The error should be
+    assumed to be that access was denied.
+
+## Migration
+
+This is an optional feature.
+
+### `migrate <config>`
+**Server to client**
+
+Sends an offer to migrate an entire server to a client, assuming that the
+client has listen server capabilities.
+
+- `config`: The entire configuration key-value store
+
+**Response**: `migrate <result>`
+
+### `migrate <result>`
+**Client to server**
+
+- `result`: Result code
+  - `success`: The client accepts the migration, and the old server should
+    shut down.
+  - `error`: The client rejects the migration.
+
+### `redirect <ip> <port>`
+**Server to client**
+
+Broadcast to all clients that the server is being moved to a specified
+address and port.
+
+- `ip`: New address of the server
+- `port`: New port of the server
+
+
+
+# Implementation
+
+The design of Animated Chatroom may seem long, complicated, and irrelevant.
+For this reason, an incremental development process is recommended.
+
+A suggested roadmap is as follows.
+
+## Initial implementation set
+
+- Implement core, except for the following features:
+  - WebM support
+  - Custom scaling filters
+  - Duration estimation (i.e. ignore offset)
+  - Custom chatbox fonts
+  - Effects
+  - Transitions
+  - Audio fade
+- Implement server, except for the following features:
+  - Protection
+  - Permissions
+  - Idle activity event
+- Implement the following features in the client:
+  - SQLite-based asset manager
+  - Lobby
+    - Master server list
+    - Direct connect
+    - Join dialog, including asset download progress
+  - Options
+    - Name
+    - Repository list
+    - Asset list
+  - Main window
+    - Room selection dialog
+    - Character selection dialog
+    - Viewport
+    - IC widget
+    - IC log
+    - OOC widget
+    - Music list (no categories)
+    - Client-side sound mixer
+    - Basic server configuration dialog
+      - JSON object tree
+- Converter from AO1 to AC assets
+
+## Subsequent features
+
+Since there will be many bugs and features to be added, this section
+intentionally remains blank. The developers' best judgment should be applied,
+given they have even reached this point in the development process. Bugs
+relating to the initial implementation set should be prioritized.
+
+Best of luck to all future AC developers!
