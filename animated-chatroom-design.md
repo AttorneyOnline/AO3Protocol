@@ -1,7 +1,7 @@
 Animated Chatroom
 =================
 
-a project (revision 1)
+a project (revision 2)
 
 
 -----------------
@@ -30,11 +30,11 @@ to the formulaic case format of Ace Attorney Online. In essence, AAO strived
 to be a simulator, whereas AO strived to be a chatroom.
 
 In addition to YouTube videos recording the hilarity of case derailments in AO,
-Fanat further publicized his game by creating "Turnabout Storm," a series
+Fanat further publicized his game by creating videos for "Turnabout Storm," a series
 which crossed over the *Phoenix Wright* saga with *Professor Layton* and
 *My Little Pony*. A moderate success, it was enough to bring the attention
 of my brother in 2015, approximately one year following the release of 1.7.5,
-the final version of AO.
+the final version of Fanat's AO.
 
 Personally, while I was not interested in the cases, as I had little time to
 sit through the drawn-out dance of roleplay, I was intrigued by the technical
@@ -60,8 +60,7 @@ consider being finished, especially if I was the sole contributor. With school
 and other, smaller projects in mind, I set AO to the corner of my mind and
 proceeded on with my life. Meanwhile, my brother grew bored of AO and moved the
 group that he had assembled from AO over to Roll20. (To this day, he still
-roleplays in Roll20 with around twenty other people in the group, and is still
-known by his excellent roleplay of Professor Layton.)
+roleplays in Roll20 with around twenty other people in the group.)
 
 About a year later, I decided to take a quick peek at state of AO again: how
 was this game doing? Was it dead yet? What kind of people were still playing?
@@ -72,9 +71,8 @@ C++ using the Qt library. I thought little of the project, however, knowing the
 ramifications of such a massive undertaking. He is not going to finish, I
 thought. I scoffed a little and moved on with my life once more.
 
-About six months later, the same "quick peek" impulse occurred. I checked back
-at this so-called remake, and taken aback, I found it at a formidable state. It
-was essentially complete.
+About six months later, I took another quick peek at this so-called remake, and
+taken aback, I found it at a formidable state. It was essentially complete.
 
 I took interest almost immediately after this realization. I wanted to reach
 this OmniTroid person and tell them about my interest in working on the remake.
@@ -156,9 +154,9 @@ Chatroom.
 
 Sometime during my rediscovery of AO, I also learned of the so-called "AO 1.8,"
 an unofficial update to 1.7.5 that made modifications to the default theme and
-vanilla assets, as well as included an "Automatic Attorney Utility," a robust
+vanilla assets. It included an "Automatic Attorney Utility," a robust
 set of macros for the game, since obviously the Delphi code could not be
-modified. I had briefly considered writing master server code to "federate"
+modified. I had briefly considered writing master server code to federate
 with the 1.8 master server, but I quickly abandoned the code after I realized
 that the 1.8 master servers were long dead. Mine was virtually the only one
 left standing.
@@ -188,6 +186,15 @@ wished to make an Electron-based client for AO3, and they would make it
 strictly for Attorney Online - it would not bear the name "Animated Chatroom."
 After a while of debate, I reluctantly agreed to help them, while denying that
 AC was cancelled. I wished to work on AC, but still could not find time.
+
+Two months later, their AO3 project fizzled out. My inability to set apart a
+time to work on AC persisted throughout the rest of 2018, as I had been
+afflicted with particularly severe anxiety that summer.
+
+By the beginning of 2019, I was able to better decide the optimal route to
+developing AC: instead of developing AC independently, it would be wiser to
+gradually morph AO2 into AC by stripping away its parts - a long-term strategy
+that could yield more results than one large ambitious project.
 
 From the blurs of development, it has come to my attention that the design
 principles behind Animated Chatroom have not been unilaterally addressed. The
@@ -225,7 +232,17 @@ factored into the size calculation.
 
 Python is a very friendly language and has proven to have a favorable learning curve
 for beginners and professionals alike. As a result of its reputation, many bindings
-and libraries exist for it, including PyQt5 and FFmpeg.
+and libraries exist for it, including PyQt5 and FFmpeg. However, it lacks a solid
+event-driven foundation needed for clean asynchronous programming.
+
+### Qt
+
+Qt is a cross-platform desktop library that is predominantly developed with C++.
+However, it has bindings in various languages and can be statically compiled
+into a small single executable if needed.
+Breakthroughs in Qt 5.11 allow the execution of ECMAScript 6 code, which
+could potentially accelerate development since it is no longer necessary to
+struggle with C++.
 
 ### Electron
 
@@ -594,16 +611,18 @@ determine which assets correspond to which archives.
 This section is still under debate. The proposed formats are as follows:
 
 - **Still images**: PNG
-- **Animations**: WebM/VP8 (YUVA420P)
-    We have determined that this is the only up-to-date format that supports
+- **Animations**: WebM/VP8 (YUVA420P), APNG
+    We have determined that VP8 the only up-to-date format that supports
     8-bit transparency with compression that matches or exceeds that of GIF.
-- **Sounds**: MP3 (128~192k) or Opus (96k)
-    MP3 remains the "gold standard" for music compression. However, recent
+    APNG provides lossless compression for small animations; VP8, on the other
+    hand, is lossy, but yields very low sizes for 3D-like animations.
+- **Sounds**: MP3 (128~192k) or Opus (64~96k)
+    MP3 remains the "gold standard" for music compression. However,
     audio sampling tests indicate that Opus provides nearly transparent
-    quality at a low bitrate (96k). To save on size and as a trial adoption
-    of the Opus format, Opus should be used for small audio files and some
-    music files. However, no transcoding need be performed if the file
-    already exists in MP3 format.
+    quality at a low bitrate. To save on size and as a trial adoption
+    of the Opus format, Opus should be used for all new audio files.
+    However, no transcoding need be performed if the file already exists in
+    MP3 format, unless size is a significant concern.
 
 ## Repositories
 
@@ -1040,7 +1059,7 @@ The master server simply holds a list of IP addresses and sends them to the
 client.
 
 The master server may be implemented using any high-performance network
-library, such as Python asyncio (uvloop if more performance is needed), Node.js
+library, such as Python `asyncio` (`uvloop` if more performance is needed), Node.js
 (if project is time-constrained), or Elixir (if competent enough to pursue it).
 
 The server list may be backed using Redis or PostgreSQL.
@@ -1133,6 +1152,7 @@ Provides the server's basic information to the client.
 - `auth_challenge`: Authentication challenge. Passed even when there is no
     password.
 - `rooms`: An ordered list of rooms
+  - `id`: Unique identifier for the room
   - `name`: Name of the room
   - `players`: Number of players in the room
   - `desc`: Description of the room
@@ -1213,15 +1233,16 @@ new client session/socket to be opened with the server.
 
 Requests the character list for a room.
 
-- `room_id`: Ordinal number of the room
+- `room_id`: Unique ID of the room
 
 **Response**: `chars <characters> <custom_allowed>`
 
-### `chars <characters> <custom_allowed>`
+### `chars <room_id> <characters> <custom_allowed>`
 **Server to client**
 
 Lists the allowed characters for a room.
 
+- `room_id`: Unique ID of the room
 - `characters`: Ordered list of characters
   - `asset`: Asset ID
   - `protection`: Protection level
@@ -1236,7 +1257,7 @@ Lists the allowed characters for a room.
 
 Joins a room.
 
-- `room_id`: Ordinal number of the room
+- `room_id`: Unique ID of the room
 - `character`: Asset ID
 
 **Response**: `join-room <result>`
@@ -1267,16 +1288,29 @@ another player.
 
 **Response**: OOC message is echoed by server.
 
+### `time`
+***Client to server***
+
+Requests the network time for the client to synchronize with the server.
+
+**Response**: `time <time>`
+
+### `time <time>`
+***Server to client***
+
+Indicates the current network time of the server.
+
+- `time`: Milliseconds since epoch (can be any epoch)
+
 ## Events
 
 The server will send event commands that may be passed directly to the core;
 see the Core section for information about such commands.
 
-In addition, events will contain a field `timestamp`, which specifies the Unix
-timestamp (in UTC) representing the time the event was sent by the server. If
-the difference between the `timestamp` and the current system time (in UTC) is
-greater than 2 seconds, the difference should be added to the offset before the
-command is passed to the core.
+In addition, events will contain a field `timestamp`, which specifies a
+timestamp representing when the event should be fired by the client. To
+synchronize clients, a slight (25 ms) delay should be added by the server
+to all scheduled events.
 
 Many commands are bidirectional; discretion should be taken in the server
 implementation regarding which commands should be bidirectional. Invalid
@@ -1304,20 +1338,25 @@ Values may contain nested keys and values.
 ### `set-opt <key> <value>`
 **Client to server**
 
-Sets an option. The value may not be an object, but it can
-be an array or literal value.
+Sets an option. The value may not be an object, but it can be an array or
+literal value.
 
-**Response**: `set-opt <result>`
+- `key`: Dot-delimited key
+- `value`: JSON-like value
 
-### `set-opt <result>`
+**Response**: `set-opt <key> <result> [message]`
+
+### `set-opt <key> <result> [message]`
 **Server to client**
 
 Indicates the result of the most recent option change.
 
+- `key`: Key attempted to be set
 - `result`: Result code
   - `success`: The option was set successfully.
   - `error`: There was an error setting the option. The error should be
     assumed to be that access was denied.
+- `message`: Optional error message
 
 ## Migration
 
